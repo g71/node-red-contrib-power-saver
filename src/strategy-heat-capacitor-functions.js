@@ -2,11 +2,11 @@
 const { DateTime } = require("luxon");
 const { roundPrice, getDiffToNextOn } = require("./utils");
 
-function calculateOpportunities(prices, pattern, amount) {
+function calculateOpportunities(prices, pattern, amount, periodLengthInMinutes=60) {
   //creating a price vector with minute granularity
-  const tempPrice = Array(prices.length * 60).fill(0);
+  const tempPrice = Array(prices.length * periodLengthInMinutes).fill(0);
   for (let i = 0; i < prices.length; i++) {
-    tempPrice.fill(prices[i], i * 60, (i + 1) * 60);
+    tempPrice.fill(prices[i], i * periodLengthInMinutes, (i + 1) * periodLengthInMinutes);
     //debugger;
   }
 
@@ -17,7 +17,7 @@ function calculateOpportunities(prices, pattern, amount) {
   //Calculating procurement opportunities. Sliding the pattern over the price vector to find the price for procuring
   //at time t
   const dot = (a, b) => a.map((x, i) => a[i] * b[i]).reduce((m, n) => m + n);
-  const procurementOpportunities = Array(prices.length * 60 - pattern.length + 1);
+  const procurementOpportunities = Array(prices.length * periodLengthInMinutes - pattern.length + 1);
   for (let i = 0; i < procurementOpportunities.length; i++) {
     procurementOpportunities[i] = dot(weightedPattern, tempPrice.slice(i, i + pattern.length));
   }
@@ -230,7 +230,8 @@ function runBuySellAlgorithm(
   boostTempHeat,
   boostTempCool,
   maxTempAdjustment,
-  minSavings
+  minSavings,
+  periodLengthInMinutes
 ) {
   const prices = [...priceData.map((pd) => pd.value)];
   const startDate = DateTime.fromISO(priceData[0].start);
@@ -243,8 +244,8 @@ function runBuySellAlgorithm(
   const sellPattern = Array(sellDuration).fill(1);
 
   //Calculate what it will cost to procure/sell 1 kWh as a function of time
-  const buyPrices = calculateOpportunities(prices, buyPattern, 1);
-  const sellPrices = calculateOpportunities(prices, sellPattern, 1);
+  const buyPrices = calculateOpportunities(prices, buyPattern, 1, periodLengthInMinutes);
+  const sellPrices = calculateOpportunities(prices, sellPattern, 1, periodLengthInMinutes);
 
   //Find dates for when to procure/sell
   const buySell = findBestBuySellPattern(buyPrices, buyPattern.length, sellPrices, sellPattern.length);
