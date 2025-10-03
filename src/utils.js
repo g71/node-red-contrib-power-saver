@@ -1,4 +1,4 @@
-const { DateTime } = require("luxon");
+const { DateTime, Interval } = require("luxon");
 
 function booleanConfig(value) {
   return value === "true" || value === true;
@@ -252,6 +252,16 @@ function getOutputForTime(schedule, time, defaultValue) {
   return pastSchedule.length ? pastSchedule[pastSchedule.length - 1].value : defaultValue;
 }
 
+function calcPeriodLength(priceData) {
+  // return diff in minutes based on last two entries, default to 60
+  return priceData.length >= 2
+    ? Interval.fromDateTimes(
+        DateTime.fromISO(priceData.at(-2).start),
+        DateTime.fromISO(priceData.at(-1).start))
+      .toDuration('minutes').as('minutes')
+    : 60;
+}
+
 module.exports = {
   booleanConfig,
   calcNullSavings,
@@ -277,4 +287,5 @@ module.exports = {
   saveOriginalConfig,
   sortedIndex,
   validationFailure,
+  calcPeriodLength,
 };

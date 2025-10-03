@@ -12,7 +12,7 @@ const converted_prices = require("./data/converted-prices.json");
 const decreasing_end_prices = require("./data/tibber-decreasing2-24h.json");
 
 describe("ps-strategy-heat-capacitor-functions", () => {
-  let prices, decreasing_24h_prices, start_date, buy_pattern, sell_pattern;
+  let prices, start_date, buy_pattern, sell_pattern;
 
   //User input
   const timeHeat1C = 60;
@@ -25,20 +25,30 @@ describe("ps-strategy-heat-capacitor-functions", () => {
 
   before(function () {
     prices = converted_prices.priceData.slice(0, 1).map((p) => p.value);
-    decreasing_24h_prices = decreasing_end_prices.priceData.slice(0, 1).map((p) => p.value);
     start_date = DateTime.fromISO(converted_prices.priceData[0].start);
     buy_pattern = Array(Math.round(timeHeat1C * maxTempAdjustment * 2)).fill(1);
     sell_pattern = Array(Math.round(timeCool1C * maxTempAdjustment * 2)).fill(1);
   });
 
-  it("Can calculate procurement opportunities", () => {
+  it("Can calculate procurement opportunities, 60 min period", () => {
     const my_prices = prices.slice(0, 1);
+    console.log('my_prices', my_prices);
     const my_buy_pattern = Array(5).fill(1);
     //Calculate what it will cost to procure/sell 1 kWh as a function of time
-    let result = calculateOpportunities(my_prices, my_buy_pattern, 1);
+    let result = calculateOpportunities(my_prices, my_buy_pattern, 1, 60);
     //Remove float precisions errors by rounding
     result = result.map((x) => Math.round(x * 1000000) / 1000000);
     expect(result).to.eql(Array(56).fill(my_prices[0]));
+  });
+
+  it("Can calculate procurement opportunities, 15 min period", () => {
+    const my_prices = converted_prices.priceData.slice(3, 4).map((p) => p.value);
+    const my_buy_pattern = Array(4).fill(1);
+    //Calculate what it will cost to procure/sell 1 kWh as a function of time
+    let result = calculateOpportunities(my_prices, my_buy_pattern, 1, 15);
+    //Remove float precisions errors by rounding
+    result = result.map((x) => Math.round(x * 1000000) / 1000000);
+    expect(result).to.eql(Array(12).fill(my_prices[0]));
   });
 
   it("Can find procurement pattern", () => {

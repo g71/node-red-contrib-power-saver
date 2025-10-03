@@ -1,8 +1,9 @@
 "use strict";
-const { DateTime } = require("luxon");
+const { DateTime, Interval } = require("luxon");
 const { validateInput } = require("./handle-input");
 const { runBuySellAlgorithm, findTemp } = require("./strategy-heat-capacitor-functions");
 const { version } = require("../package.json");
+const { calcPeriodLength } = require('./utils.js');
 
 module.exports = function (RED) {
   function TempMan(config) {
@@ -76,15 +77,20 @@ module.exports = function (RED) {
         if (msg.payload.config.hasOwnProperty("minSavings")) node.minSavings = Number(msg.payload.config.minSavings);
       }
 
-      //merge pricedata to escape some midnight issues. Store max 72 hour history
+      //merge pricedata to escape some midnight issues
       if (msg.payload.hasOwnProperty("priceData")) {
         if (node.hasOwnProperty("priceData")) {
           node.priceData = mergePriceData(node.priceData, msg.payload.priceData);
-          if (node.priceData.length > 72) node.priceData = node.priceData.slice(-72);
         } else {
           node.priceData = msg.payload.priceData;
         }
       }
+
+      const periodLengthInMinutes = calcPeriodLength(node.priceData);
+
+      // Store max 72 hour history
+      const maxEntries = Math.floor(72 * 60 / periodLengthInMinutes);
+      if (node.priceData.length > maxEntries) node.priceData = node.priceData.slice(-maxEntries);
 
       if (node.hasOwnProperty("priceData")) {
         node.schedule = runBuySellAlgorithm(
@@ -95,7 +101,8 @@ module.exports = function (RED) {
           node.boostTempHeat,
           node.boostTempCool,
           node.maxTempAdjustment,
-          node.minSavings
+          node.minSavings,
+          periodLengthInMinutes
         );
 
         if (msg.payload.hasOwnProperty("time")) {
@@ -118,6 +125,7 @@ module.exports = function (RED) {
         };
 
         node.schedule.priceData = node.priceData;
+        node.schedule.periodLength = periodLengthInMinutes;
         node.schedule.time = DateTime.now().toISO();
         node.schedule.version = version;
 
