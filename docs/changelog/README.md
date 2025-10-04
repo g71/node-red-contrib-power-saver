@@ -7,6 +7,11 @@ sidebarDepth: 1
 
 List the most significant changes.
 
+## 4.2.6
+
+ - Support 15 minute prices in heat capacitor strategy
+ - Update dependencies
+
 ## 4.2.5
 
  - Changes to Capacity part of grid tariff example, Update sensors node: Adding filter so onoy sensors that has a value are set, to avoid error message.
