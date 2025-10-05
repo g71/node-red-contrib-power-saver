@@ -1,5 +1,5 @@
 "use strict";
-const { DateTime, Interval } = require("luxon");
+const { DateTime } = require("luxon");
 const { validateInput } = require("./handle-input");
 const { runBuySellAlgorithm, findTemp } = require("./strategy-heat-capacitor-functions");
 const { version } = require("../package.json");
